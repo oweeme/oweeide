@@ -5,7 +5,6 @@ import EditorArea from './components/EditorArea.vue'
 import StatusBar from './components/StatusBar.vue'
 import Terminal from './components/Terminal.vue'
 import AiPanel from './components/AiPanel.vue'
-import CliPanel from './components/CliPanel.vue'
 import DatabasePanel from './components/DatabasePanel.vue'
 import FtpPanel from './components/FtpPanel.vue'
 import SearchPanel from './components/SearchPanel.vue'
@@ -25,7 +24,7 @@ const { t } = useI18n()
 const sidebarWidth = ref(240)
 const isSideResizing = ref(false)
 const showSidebar = ref(true)
-const sidebarView = ref<'explorer' | 'search' | 'ai' | 'database' | 'ftp' | 'api' | 'claude-cli' | 'gemini-cli'>('explorer')
+const sidebarView = ref<'explorer' | 'search' | 'ai' | 'database' | 'ftp' | 'api'>('explorer')
 
 // Settings / About / Preferences
 const showAbout = ref(false)
@@ -164,19 +163,17 @@ function onGlobalKeydown(e: KeyboardEvent) {
     return
   }
 
-  // Ctrl+Shift+C — open Claude Code CLI panel
+  // Ctrl+Shift+C — open Claude Code CLI as workspace tab
   if (ctrl && e.shiftKey && (e.key === 'c' || e.key === 'C')) {
     e.preventDefault()
-    sidebarView.value = 'claude-cli'
-    showSidebar.value = true
+    store.openCliTab('claude')
     return
   }
 
-  // Ctrl+Shift+G — open Gemini CLI panel
+  // Ctrl+Shift+G — open Gemini CLI as workspace tab
   if (ctrl && e.shiftKey && (e.key === 'g' || e.key === 'G')) {
     e.preventDefault()
-    sidebarView.value = 'gemini-cli'
-    showSidebar.value = true
+    store.openCliTab('gemini')
     return
   }
 
@@ -352,8 +349,6 @@ function onDbOpenTable(connId: string, tableName: string, connName: string, driv
       <DatabasePanel v-else-if="sidebarView === 'database'" @open-table="onDbOpenTable" />
       <FtpPanel v-else-if="sidebarView === 'ftp'" />
       <ApiCollections v-else-if="sidebarView === 'api'" ref="apiCollRef" />
-      <CliPanel v-else-if="sidebarView === 'claude-cli'" cli="claude" @open-file="store.openFile($event)" />
-      <CliPanel v-else-if="sidebarView === 'gemini-cli'" cli="gemini" @open-file="store.openFile($event)" />
     </aside>
 
     <!-- Activity bar -->
@@ -432,21 +427,21 @@ function onDbOpenTable(connId: string, tableName: string, connName: string, driv
           <path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 6v4m0 4h.01"/>
         </svg>
       </button>
-      <!-- Claude Code CLI -->
+      <!-- Claude Code CLI — abre como tab en el workspace -->
       <button
         class="activity-btn activity-btn--claude"
-        :class="{ active: showSidebar && sidebarView === 'claude-cli' }"
-        title="Claude Code CLI — workspace"
-        @click="sidebarView === 'claude-cli' ? showSidebar = !showSidebar : (sidebarView = 'claude-cli', showSidebar = true)"
+        :class="{ active: store.state.activeTabPath === 'cli://claude' }"
+        title="Claude Code CLI — Ctrl+Shift+C"
+        @click="store.openCliTab('claude')"
       >
         <span style="font-size:15px;font-weight:900;line-height:1">◆</span>
       </button>
-      <!-- Gemini CLI -->
+      <!-- Gemini CLI — abre como tab en el workspace -->
       <button
         class="activity-btn activity-btn--gemini"
-        :class="{ active: showSidebar && sidebarView === 'gemini-cli' }"
-        title="Gemini CLI — workspace"
-        @click="sidebarView === 'gemini-cli' ? showSidebar = !showSidebar : (sidebarView = 'gemini-cli', showSidebar = true)"
+        :class="{ active: store.state.activeTabPath === 'cli://gemini' }"
+        title="Gemini CLI — Ctrl+Shift+G"
+        @click="store.openCliTab('gemini')"
       >
         <span style="font-size:15px;font-weight:900;line-height:1">◈</span>
       </button>

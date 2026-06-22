@@ -28,6 +28,10 @@ const cancelCreate  = inject<() => void>('explorerCancelCreate',  () => {})
 // Active file highlight
 const activeFilePath = inject<Ref<string | null>>('activeFilePath')
 const isActive = computed(() => !props.node.is_dir && props.node.path === activeFilePath?.value)
+
+// Keyboard focus highlight
+const focusedPath = inject<Ref<string | null>>('focusedPath')
+const isFocused = computed(() => props.node.path === focusedPath?.value)
 const rowEl = ref<HTMLElement | null>(null)
 watch(isActive, (val) => {
   if (val) nextTick(() => rowEl.value?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))
@@ -126,8 +130,9 @@ function getFolderColor(name: string): string {
       v-else
       ref="rowEl"
       class="tree-row"
-      :class="{ 'tree-row--dragover': isDragOver, 'tree-row--active': isActive }"
+      :class="{ 'tree-row--dragover': isDragOver, 'tree-row--active': isActive, 'tree-row--focused': isFocused }"
       :style="{ paddingLeft: (8 + depth * 14) + 'px' }"
+      :data-path="node.path"
       draggable="true"
       @click="emit('toggle', node)"
       @contextmenu.stop="emit('contextmenu', $event, node)"
@@ -248,6 +253,8 @@ export default { components: { FileIcon } }
 .tree-row--dragover { background: rgba(46,158,135,0.15) !important; outline: 1px dashed var(--accent); }
 .tree-row--active { background: var(--bg-active) !important; }
 .tree-row--active .tree-label { color: var(--fg-bright); font-weight: 500; }
+.tree-row--focused { outline: 1px solid var(--accent); outline-offset: -1px; background: rgba(82,139,255,0.1) !important; }
+.tree-row--focused .tree-label { color: var(--fg-bright); }
 
 .tree-arrow {
   width: 14px; height: 14px;

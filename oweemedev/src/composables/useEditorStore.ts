@@ -1,7 +1,7 @@
 import { reactive } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
-export type TabType = 'code' | 'image' | 'database' | 'ftp' | 'api' | 'ftp-file'
+export type TabType = 'code' | 'image' | 'database' | 'ftp' | 'api' | 'ftp-file' | 'claude-cli' | 'gemini-cli'
 
 export interface Tab {
   path: string
@@ -178,6 +178,15 @@ export function useEditorStore() {
     state.activeTabPath = path
   }
 
+  function openCliTab(cli: 'claude' | 'gemini') {
+    const path = `cli://${cli}`
+    const existing = state.tabs.find(t => t.path === path)
+    if (existing) { state.activeTabPath = path; return }
+    const name = cli === 'claude' ? '◆ Claude Code' : '◈ Gemini CLI'
+    state.tabs.push({ path, name, content: '', modified: false, language: 'shell', type: cli === 'claude' ? 'claude-cli' : 'gemini-cli' })
+    state.activeTabPath = path
+  }
+
   function openApiRequest(requestId: string, name: string, initialJson?: string) {
     const path = `api://${requestId}`
     const existing = state.tabs.find(t => t.path === path)
@@ -192,5 +201,5 @@ export function useEditorStore() {
     toClose.forEach(t => closeTab(t.path))
   }
 
-  return { state, activeTab, setRootPath, openFile, saveFile, saveActiveFile, updateContent, closeTab, closeTabByPath, renameTab, setActive, setCursor, setSelectedText, openDbTable, openFtpConn, openFtpFile, openApiRequest }
+  return { state, activeTab, setRootPath, openFile, saveFile, saveActiveFile, updateContent, closeTab, closeTabByPath, renameTab, setActive, setCursor, setSelectedText, openDbTable, openFtpConn, openFtpFile, openApiRequest, openCliTab }
 }

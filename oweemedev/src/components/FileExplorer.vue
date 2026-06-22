@@ -8,6 +8,11 @@ import TreeNode, { type TreeNodeData } from './TreeNode.vue'
 const store = useEditorStore()
 const tree = ref<TreeNodeData[]>([])
 const rootLabel = ref('')
+
+// Keyboard navigation state (declared early — used in provide() below)
+const focusedPath = ref<string | null>(null)
+const explorerEl = ref<HTMLElement | null>(null)
+const explorerFocused = ref(false)
 const rootInput = ref('')
 const showInput = ref(false)
 const loading = ref(false)
@@ -321,6 +326,7 @@ async function onDropNode(targetDir: any) {
 
 // Provide to TreeNode descendants
 provide('activeFilePath', activeFilePath)
+provide('focusedPath', focusedPath)
 provide('explorerRenaming', renaming)
 provide('explorerConfirmRename', confirmRename)
 provide('explorerCancelRename', cancelRename)
@@ -342,8 +348,91 @@ async function openInFileManager() {
   }
 }
 
+// ── Keyboard navigation ──────────────────────────────────────
+
+// Build flat list of all currently visible nodes (respects expanded state)
+function flatVisible(nodes: TreeNodeData[]): TreeNodeData[] {
+  const result: TreeNodeData[] = []
+  for (const n of nodes) {
+    if (n.path === '_creating_') continue
+    result.push(n)
+    if (n.is_dir && n.expanded && n.children) {
+      result.push(...flatVisible(n.children))
+    }
+  }
+  return result
+}
+
+function scrollToFocused() {
+  nextTick(() => {
+    const el = explorerEl.value?.querySelector(`[data-path="${CSS.escape(focusedPath.value ?? '')}"]`) as HTMLElement | null
+    el?.scrollIntoView({ block: 'nearest' })
+  })
+}
+
+async function onExplorerKeydown(e: KeyboardEvent) {
+  // Only handle when explorer has focus and no modal/input is open
+  if (!explorerFocused.value) return
+  if (creating.value || renaming.value || showInput.value) return
+
+  const flat = flatVisible(tree.value)
+  if (flat.length === 0) return
+
+  const currentIdx = focusedPath.value ? flat.findIndex(n => n.path === focusedPath.value) : -1
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    const next = currentIdx < flat.length - 1 ? currentIdx + 1 : 0
+    focusedPath.value = flat[next].path
+    scrollToFocused()
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    const prev = currentIdx > 0 ? currentIdx - 1 : flat.length - 1
+    focusedPath.value = flat[prev].path
+    scrollToFocused()
+  } else if (e.key === 'ArrowRight') {
+    e.preventDefault()
+    const node = flat[currentIdx]
+    if (!node) return
+    if (node.is_dir && !node.expanded) {
+      node.expanded = true
+      if (!node.loaded) { node.children = await loadDir(node.path); node.loaded = true }
+    }
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault()
+    const node = flat[currentIdx]
+    if (!node) return
+    if (node.is_dir && node.expanded) {
+      node.expanded = false
+    } else {
+      // Move focus to parent folder
+      const parentPath = node.path.split('/').slice(0, -1).join('/')
+      const parentNode = flat.find(n => n.path === parentPath)
+      if (parentNode) focusedPath.value = parentNode.path
+      scrollToFocused()
+    }
+  } else if (e.key === 'Enter') {
+    e.preventDefault()
+    const node = flat[currentIdx]
+    if (!node) return
+    if (node.is_dir) {
+      node.expanded = !node.expanded
+      if (node.expanded && !node.loaded) { node.children = await loadDir(node.path); node.loaded = true }
+    } else {
+      store.openFile(node.path)
+    }
+  } else if (e.key === 'Escape') {
+    closeCtx(); cancelCreate(); cancelRename()
+    deleteModal.value = null; showInput.value = false
+  } else if (e.key === 'F2') {
+    const node = flat[currentIdx]
+    if (node) { ctxMenu.value = { x: 0, y: 0, node }; startRename() }
+  }
+}
+
 // ── Global ESC to close panels ───────────────────────────────
 function onGlobalKey(e: KeyboardEvent) {
+  if (explorerFocused.value) return  // handled by onExplorerKeydown
   if (e.key === 'Escape') {
     closeCtx()
     cancelCreate()
@@ -370,7 +459,17 @@ async function refreshTree() {
 </script>
 
 <template>
-  <div class="explorer" data-explorer @click="closeCtx" @contextmenu.prevent>
+  <div
+    ref="explorerEl"
+    class="explorer"
+    data-explorer
+    tabindex="0"
+    @click="closeCtx; explorerFocused = true"
+    @focus="explorerFocused = true"
+    @blur="explorerFocused = false"
+    @keydown="onExplorerKeydown"
+    @contextmenu.prevent
+  >
     <div class="explorer-header">
       <span class="explorer-title">EXPLORER</span>
       <div class="header-actions">
@@ -528,6 +627,7 @@ async function refreshTree() {
   font-family: var(--font-ui);
   color: var(--fg);
   position: relative;
+  outline: none;  /* focus ring gestionado por tree-row--focused */
 }
 
 .explorer-header {

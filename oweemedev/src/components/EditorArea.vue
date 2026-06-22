@@ -39,6 +39,7 @@ import ImageViewer from './ImageViewer.vue'
 import DatabaseView from './DatabaseView.vue'
 import FtpView from './FtpView.vue'
 import ApiRequestTab from './ApiRequestTab.vue'
+import CliPanel from './CliPanel.vue'
 
 const store = useEditorStore()
 const { t, setLocale, locale } = useI18n()
@@ -538,6 +539,22 @@ function tabDotColor(lang: string) {
       :initial-json="store.activeTab()!.content"
       @update-content="(c) => store.updateContent(store.activeTab()!.path, c)"
       @save-request="(req) => emit('save-api-request', req)"
+    />
+
+    <!-- Claude Code CLI tab -->
+    <CliPanel
+      v-if="store.activeTab()?.type === 'claude-cli'"
+      key="claude-cli-tab"
+      cli="claude"
+      @open-file="store.openFile($event)"
+    />
+
+    <!-- Gemini CLI tab -->
+    <CliPanel
+      v-else-if="store.activeTab()?.type === 'gemini-cli'"
+      key="gemini-cli-tab"
+      cli="gemini"
+      @open-file="store.openFile($event)"
     />
 
     <!-- Code editor host (also for ftp-file tabs) -->

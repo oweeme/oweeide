@@ -7,7 +7,7 @@ const { t, setLocale, locale } = useI18n()
 
 const LOCALES: { code: Locale; flag: string; label: string }[] = [
   { code: 'en', flag: '🇺🇸', label: 'English' },
-  { code: 'es', flag: '🇲🇽', label: 'Español' },
+  { code: 'es', flag: '🇧🇴', label: 'Español' },
   { code: 'de', flag: '🇩🇪', label: 'Deutsch' },
   { code: 'fr', flag: '🇫🇷', label: 'Français' },
   { code: 'ko', flag: '🇰🇷', label: '한국어' },
