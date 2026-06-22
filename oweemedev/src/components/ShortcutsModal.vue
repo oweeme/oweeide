@@ -38,6 +38,8 @@ const GROUPS = [
       { keys: ['Ctrl', 'Shift', 'F'],   desc: 'Buscar en archivos (sidebar)' },
       { keys: ['Ctrl', '`'],            desc: 'Mostrar / ocultar terminal' },
       { keys: ['Ctrl', 'Shift', 'A'],   desc: 'Abrir AI Assistant (sidebar)' },
+      { keys: ['Ctrl', 'Shift', 'C'],   desc: 'Abrir Claude Code CLI (workspace)' },
+      { keys: ['Ctrl', 'Shift', 'G'],   desc: 'Abrir Gemini CLI (workspace)' },
     ],
   },
   {

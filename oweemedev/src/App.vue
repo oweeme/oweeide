@@ -5,6 +5,7 @@ import EditorArea from './components/EditorArea.vue'
 import StatusBar from './components/StatusBar.vue'
 import Terminal from './components/Terminal.vue'
 import AiPanel from './components/AiPanel.vue'
+import CliPanel from './components/CliPanel.vue'
 import DatabasePanel from './components/DatabasePanel.vue'
 import FtpPanel from './components/FtpPanel.vue'
 import SearchPanel from './components/SearchPanel.vue'
@@ -24,7 +25,7 @@ const { t } = useI18n()
 const sidebarWidth = ref(240)
 const isSideResizing = ref(false)
 const showSidebar = ref(true)
-const sidebarView = ref<'explorer' | 'search' | 'ai' | 'database' | 'ftp' | 'api'>('explorer')
+const sidebarView = ref<'explorer' | 'search' | 'ai' | 'database' | 'ftp' | 'api' | 'claude-cli' | 'gemini-cli'>('explorer')
 
 // Settings / About / Preferences
 const showAbout = ref(false)
@@ -159,6 +160,22 @@ function onGlobalKeydown(e: KeyboardEvent) {
   if (ctrl && e.shiftKey && (e.key === 'a' || e.key === 'A')) {
     e.preventDefault()
     sidebarView.value = 'ai'
+    showSidebar.value = true
+    return
+  }
+
+  // Ctrl+Shift+C — open Claude Code CLI panel
+  if (ctrl && e.shiftKey && (e.key === 'c' || e.key === 'C')) {
+    e.preventDefault()
+    sidebarView.value = 'claude-cli'
+    showSidebar.value = true
+    return
+  }
+
+  // Ctrl+Shift+G — open Gemini CLI panel
+  if (ctrl && e.shiftKey && (e.key === 'g' || e.key === 'G')) {
+    e.preventDefault()
+    sidebarView.value = 'gemini-cli'
     showSidebar.value = true
     return
   }
@@ -335,6 +352,8 @@ function onDbOpenTable(connId: string, tableName: string, connName: string, driv
       <DatabasePanel v-else-if="sidebarView === 'database'" @open-table="onDbOpenTable" />
       <FtpPanel v-else-if="sidebarView === 'ftp'" />
       <ApiCollections v-else-if="sidebarView === 'api'" ref="apiCollRef" />
+      <CliPanel v-else-if="sidebarView === 'claude-cli'" cli="claude" @open-file="store.openFile($event)" />
+      <CliPanel v-else-if="sidebarView === 'gemini-cli'" cli="gemini" @open-file="store.openFile($event)" />
     </aside>
 
     <!-- Activity bar -->
@@ -406,12 +425,30 @@ function onDbOpenTable(connId: string, tableName: string, connName: string, driv
       <button
         class="activity-btn"
         :class="{ active: showSidebar && sidebarView === 'ai' }"
-        :title="t('ai')"
+        :title="t('ai') + ' (Ctrl+Shift+A)'"
         @click="sidebarView === 'ai' ? showSidebar = !showSidebar : (sidebarView = 'ai', showSidebar = true)"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 6v4m0 4h.01"/>
         </svg>
+      </button>
+      <!-- Claude Code CLI -->
+      <button
+        class="activity-btn activity-btn--claude"
+        :class="{ active: showSidebar && sidebarView === 'claude-cli' }"
+        title="Claude Code CLI — workspace"
+        @click="sidebarView === 'claude-cli' ? showSidebar = !showSidebar : (sidebarView = 'claude-cli', showSidebar = true)"
+      >
+        <span style="font-size:15px;font-weight:900;line-height:1">◆</span>
+      </button>
+      <!-- Gemini CLI -->
+      <button
+        class="activity-btn activity-btn--gemini"
+        :class="{ active: showSidebar && sidebarView === 'gemini-cli' }"
+        title="Gemini CLI — workspace"
+        @click="sidebarView === 'gemini-cli' ? showSidebar = !showSidebar : (sidebarView = 'gemini-cli', showSidebar = true)"
+      >
+        <span style="font-size:15px;font-weight:900;line-height:1">◈</span>
       </button>
       <div class="activity-spacer" />
       <button class="activity-btn" title="Settings" @click.stop="showSettingsMenu = !showSettingsMenu" style="position:relative">
@@ -683,6 +720,16 @@ html, body, #app { height: 100%; overflow: hidden; background: var(--bg-darkest)
 }
 .activity-btn:hover { color: #c8ddd8; background: rgba(46,158,135,0.12); }
 .activity-btn.active { color: var(--koi-cream); background: rgba(46,158,135,0.18); }
+
+/* Claude Code CLI button */
+.activity-btn--claude { color: #d97706; }
+.activity-btn--claude:hover { color: #f59e0b; background: rgba(217,119,6,0.15); }
+.activity-btn--claude.active { color: #fbbf24; background: rgba(217,119,6,0.2); }
+
+/* Gemini CLI button */
+.activity-btn--gemini { color: #4285f4; }
+.activity-btn--gemini:hover { color: #5b9cf6; background: rgba(66,133,244,0.15); }
+.activity-btn--gemini.active { color: #79b4f8; background: rgba(66,133,244,0.2); }
 
 /* Settings popup */
 .settings-overlay { position: fixed; inset: 0; z-index: 9999; }
