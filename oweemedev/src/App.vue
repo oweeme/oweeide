@@ -152,6 +152,22 @@ function onGlobalKeydown(e: KeyboardEvent) {
   if (ctrl && e.key === '`') {
     e.preventDefault()
     togglePanel()
+    return
+  }
+
+  // Ctrl+Shift+A — open AI assistant panel
+  if (ctrl && e.shiftKey && (e.key === 'a' || e.key === 'A')) {
+    e.preventDefault()
+    sidebarView.value = 'ai'
+    showSidebar.value = true
+    return
+  }
+
+  // Ctrl+S — save active file
+  if (ctrl && !e.shiftKey && e.key === 's') {
+    e.preventDefault()
+    store.saveActiveFile()
+    return
   }
 }
 

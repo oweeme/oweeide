@@ -34,9 +34,10 @@ const GROUPS = [
   {
     title: 'Interface',
     items: [
-      { keys: ['Ctrl', 'B'],            desc: 'Show / hide sidebar' },
-      { keys: ['Ctrl', 'Shift', 'F'],   desc: 'Search in files (sidebar)' },
-      { keys: ['Ctrl', '`'],            desc: 'Show / hide terminal' },
+      { keys: ['Ctrl', 'B'],            desc: 'Mostrar / ocultar sidebar' },
+      { keys: ['Ctrl', 'Shift', 'F'],   desc: 'Buscar en archivos (sidebar)' },
+      { keys: ['Ctrl', '`'],            desc: 'Mostrar / ocultar terminal' },
+      { keys: ['Ctrl', 'Shift', 'A'],   desc: 'Abrir AI Assistant (sidebar)' },
     ],
   },
   {

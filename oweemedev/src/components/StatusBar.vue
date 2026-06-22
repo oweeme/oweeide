@@ -6,37 +6,92 @@ const store = useEditorStore()
 
 const activeTab = computed(() => store.activeTab())
 const langLabel = computed(() => {
-  if (!activeTab.value) return 'Plain Text'
+  if (!activeTab.value) return ''
   const lang = activeTab.value.language
   const labels: Record<string, string> = {
     typescript: 'TypeScript', javascript: 'JavaScript',
     vue: 'Vue', php: 'PHP', go: 'Go', html: 'HTML',
     css: 'CSS', json: 'JSON', markdown: 'Markdown',
     rust: 'Rust', python: 'Python', sql: 'SQL', cpp: 'C++',
-    text: 'Plain Text',
+    shell: 'Shell', yaml: 'YAML', toml: 'TOML', xml: 'XML',
+    text: 'Plain Text', image: 'Image',
   }
   return labels[lang] ?? lang
 })
+
+const tabType = computed(() => activeTab.value?.type ?? '')
+const hasSelection = computed(() => store.state.selectedText.trim().length > 0)
+const selLines = computed(() => store.state.selectedText.split('\n').length)
+const selChars = computed(() => store.state.selectedText.length)
+
+// AI provider from localStorage (reactive read)
+const aiProvider = computed(() => localStorage.getItem('ai_provider') ?? 'claude')
+const aiModel = computed(() => {
+  const m = localStorage.getItem('ai_model') ?? ''
+  return m.split('-').slice(0,3).join('-') // shorten long model names
+})
+const aiProviderIcon: Record<string, string> = {
+  claude: '◆', deepseek: '◈', gemini: '◈', openai: '⬡', ollama: '⬡'
+}
 </script>
 
 <template>
   <div class="statusbar">
+    <!-- Left: brand + git/project info -->
     <div class="statusbar-left">
-      <span class="statusbar-item statusbar-item--accent">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-        </svg>
+      <span class="statusbar-item statusbar-item--brand">
+        <img src="/oweedev.png" width="11" height="11" style="border-radius:2px" />
         OweemeIDE
+      </span>
+
+      <!-- Tab type badge -->
+      <span v-if="tabType === 'database'" class="statusbar-item statusbar-item--db">
+        🗄 DB
+      </span>
+      <span v-else-if="tabType === 'ftp' || tabType === 'ftp-file'" class="statusbar-item statusbar-item--ftp">
+        📡 FTP/SFTP
+      </span>
+      <span v-else-if="tabType === 'api'" class="statusbar-item statusbar-item--api">
+        ⚡ API Client
+      </span>
+
+      <!-- Git placeholder (future: branch info) -->
+      <span v-if="store.state.rootPath" class="statusbar-item statusbar-item--path" :title="store.state.rootPath">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+          <path fill-rule="evenodd" d="M11.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122V6A2.5 2.5 0 0110 8.5H6a1 1 0 00-1 1v1.128a2.251 2.251 0 11-1.5 0V5.372a2.25 2.25 0 111.5 0v1.836A2.493 2.493 0 016 7h4a1 1 0 001-1v-.628A2.25 2.25 0 019.5 3.25zM4.25 12a.75.75 0 100 1.5.75.75 0 000-1.5zM3.5 3.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"/>
+        </svg>
+        {{ store.state.rootPath.split('/').pop() }}
       </span>
     </div>
 
+    <!-- Right: cursor, encoding, lang, AI, modified -->
     <div class="statusbar-right">
-      <span v-if="activeTab" class="statusbar-item">
+      <!-- Selection info -->
+      <span v-if="hasSelection" class="statusbar-item statusbar-item--sel">
+        {{ selLines > 1 ? `${selLines} líneas` : `${selChars} car` }} seleccionados
+      </span>
+
+      <!-- Cursor position -->
+      <span v-if="activeTab && activeTab.type === 'code'" class="statusbar-item">
         Ln {{ store.state.cursorLine }}, Col {{ store.state.cursorCol }}
       </span>
-      <span v-if="activeTab" class="statusbar-item">UTF-8</span>
-      <span v-if="activeTab" class="statusbar-item statusbar-item--lang">{{ langLabel }}</span>
-      <span v-if="activeTab?.modified" class="statusbar-item statusbar-item--modified">● Modified</span>
+
+      <span v-if="activeTab && activeTab.type === 'code'" class="statusbar-item">UTF-8</span>
+
+      <!-- Language -->
+      <span v-if="langLabel && activeTab?.type === 'code'" class="statusbar-item statusbar-item--lang">
+        {{ langLabel }}
+      </span>
+
+      <!-- Modified indicator -->
+      <span v-if="activeTab?.modified" class="statusbar-item statusbar-item--modified">
+        ● Modificado
+      </span>
+
+      <!-- AI indicator -->
+      <span class="statusbar-item statusbar-item--ai" title="AI Assistant activo">
+        {{ aiProviderIcon[aiProvider] ?? '◆' }} {{ aiModel || aiProvider }}
+      </span>
     </div>
   </div>
 </template>
@@ -45,36 +100,28 @@ const langLabel = computed(() => {
 .statusbar {
   height: var(--statusbar-h);
   background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 8px;
-  flex-shrink: 0;
-  font-family: var(--font-ui);
-  font-size: 11px;
-  color: rgba(255,255,255,0.9);
-  user-select: none;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 6px; flex-shrink: 0;
+  font-family: var(--font-ui); font-size: 11px;
+  color: rgba(255,255,255,0.92); user-select: none;
 }
-
-.statusbar-left,
-.statusbar-right {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
+.statusbar-left, .statusbar-right { display: flex; align-items: center; gap: 1px; }
 
 .statusbar-item {
-  padding: 0 6px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border-radius: 3px;
-  cursor: default;
-  white-space: nowrap;
+  padding: 0 6px; height: 22px;
+  display: flex; align-items: center; gap: 4px;
+  border-radius: 3px; cursor: default; white-space: nowrap;
+  transition: background 0.1s;
 }
 .statusbar-item:hover { background: rgba(255,255,255,0.15); }
-.statusbar-item--accent { font-weight: 600; gap: 5px; }
-.statusbar-item--lang { color: #fff; font-weight: 500; }
+
+.statusbar-item--brand { font-weight: 700; gap: 5px; font-size: 11.5px; }
+.statusbar-item--lang { font-weight: 500; }
 .statusbar-item--modified { color: #ffd97d; }
+.statusbar-item--sel { color: rgba(255,255,255,0.75); font-size: 10.5px; }
+.statusbar-item--path { color: rgba(255,255,255,0.7); font-size: 10.5px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.statusbar-item--ai { color: rgba(255,255,255,0.8); font-size: 10.5px; font-weight: 600; }
+.statusbar-item--db { color: #ffd97d; }
+.statusbar-item--ftp { color: #a6e3a1; }
+.statusbar-item--api { color: #89dceb; }
 </style>

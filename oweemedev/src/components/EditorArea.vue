@@ -46,7 +46,7 @@ const editorEl = ref<HTMLElement | null>(null)
 
 const LOCALES: { code: Locale; flag: string; label: string }[] = [
   { code: 'en', flag: '🇺🇸', label: 'English' },
-  { code: 'es', flag: '🇲🇽', label: 'Español' },
+  { code: 'es', flag: '🇧🇴', label: 'Español' },
   { code: 'de', flag: '🇩🇪', label: 'Deutsch' },
   { code: 'fr', flag: '🇫🇷', label: 'Français' },
   { code: 'ko', flag: '🇰🇷', label: '한국어' },
@@ -254,6 +254,8 @@ function buildExtensions(lang: string) {
         const sel = update.state.selection.main
         const line = update.state.doc.lineAt(sel.head)
         store.setCursor(line.number, sel.head - line.from + 1)
+        const selText = update.state.sliceDoc(sel.from, sel.to)
+        store.setSelectedText(selText)
       }
     }),
     EditorView.theme({

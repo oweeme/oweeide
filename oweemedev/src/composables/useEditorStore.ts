@@ -30,6 +30,7 @@ interface EditorState {
   activeTabPath: string | null
   cursorLine: number
   cursorCol: number
+  selectedText: string
 }
 
 const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp', 'avif'])
@@ -40,6 +41,7 @@ const state = reactive<EditorState>({
   activeTabPath: null,
   cursorLine: 1,
   cursorCol: 1,
+  selectedText: '',
 })
 
 function detectLanguage(filename: string): string {
@@ -137,6 +139,7 @@ export function useEditorStore() {
 
   function setActive(path: string) { state.activeTabPath = path }
   function setCursor(line: number, col: number) { state.cursorLine = line; state.cursorCol = col }
+  function setSelectedText(text: string) { state.selectedText = text }
   const activeTab = () => state.tabs.find(t => t.path === state.activeTabPath) ?? null
 
   function renameTab(oldPath: string, newPath: string, newName: string) {
@@ -189,5 +192,5 @@ export function useEditorStore() {
     toClose.forEach(t => closeTab(t.path))
   }
 
-  return { state, activeTab, setRootPath, openFile, saveFile, saveActiveFile, updateContent, closeTab, closeTabByPath, renameTab, setActive, setCursor, openDbTable, openFtpConn, openFtpFile, openApiRequest }
+  return { state, activeTab, setRootPath, openFile, saveFile, saveActiveFile, updateContent, closeTab, closeTabByPath, renameTab, setActive, setCursor, setSelectedText, openDbTable, openFtpConn, openFtpFile, openApiRequest }
 }
