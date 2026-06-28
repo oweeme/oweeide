@@ -3,6 +3,8 @@
 oweemedev/node_modules/
 oweemedev/dist/
 oweemedev/.vite/
+# Archivos
+docs
 
 # Rust / Cargo
 oweemedev/src-tauri/target/
