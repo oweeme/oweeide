@@ -58,16 +58,11 @@ jobs:
             fuse \
             libfuse2
 
-      - name: Setup macOS targets (Intel + Apple Silicon)
-        if: matrix.os == 'macos-latest'
-        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
-
       - name: Install frontend dependencies
         working-directory: oweemedev
         run: npm ci
 
-      - name: Build and release (Linux / Windows)
-        if: matrix.os != 'macos-latest'
+      - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -84,7 +79,7 @@ jobs:
             ### Instaladores disponibles
             - **Linux**: `.deb` (Debian/Ubuntu/Neon) y `.AppImage` (universal)
             - **Windows**: `.exe` (NSIS installer) y `.msi`
-            - **macOS**: `.dmg` (Intel + Apple Silicon)
+            - **macOS**: `.dmg`
 
             ### Instalación rápida
             **Linux (deb):**
@@ -100,26 +95,3 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: --bundles ${{ matrix.bundles }}
-
-      - name: Build and release (macOS universal)
-        if: matrix.os == 'macos-latest'
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: oweemedev
-          tagName: ${{ github.ref_name }}
-          releaseName: OweemeIDE ${{ github.ref_name }}
-          releaseBody: |
-            ## OweemeIDE ${{ github.ref_name }}
-
-            IDE de escritorio construido con Tauri 2 + Vue 3 + Rust.
-            Desarrollado por Héctor Martínez — hector@oweeme.com — oweeme.com
-
-            ### Instaladores disponibles
-            - **Linux**: `.deb` (Debian/Ubuntu/Neon) y `.AppImage` (universal)
-            - **Windows**: `.exe` (NSIS installer) y `.msi`
-            - **macOS**: `.dmg` (Intel + Apple Silicon)
-          releaseDraft: true
-          prerelease: false
-          args: --bundles dmg --target universal-apple-darwin
